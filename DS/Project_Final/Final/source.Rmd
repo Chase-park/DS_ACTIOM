@@ -1,0 +1,139 @@
+---
+title: "Untitled"
+author: "hase"
+date: "6/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Packages
+
+```{r packages}
+install.packages('tidyverse')
+install.packages('jsonlite')
+install.packages('DT')
+
+
+library(tidyverse)
+library(jsonlite)
+library(DT)
+
+```
+
+
+
+```{r}
+
+##encoding for mac
+
+#Sys.setlocale('LC_ALL','utf-8')
+theme_set(theme_gray(base_family="AppleGothic"))
+
+
+```
+
+## Data
+
+You can also embed plots, for example:
+
+```{r rawdata}
+
+raw= read.csv(file.choose())
+
+```
+
+
+
+
+## simple preprocessing
+
+
+```{r}
+
+raw$weeknum=1
+for (i in 1:(nrow(raw)-1)){
+  if (raw$week[i]!=raw$week[i+1]){
+    raw$weeknum[(i+1):nrow(raw)]=raw$weeknum[i]+1
+  }
+}
+
+raw.pre=
+raw%>% 
+  select( weeknum, rank, title, artist )
+
+
+
+DT::datatable(
+  head(raw.pre,100),
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+```
+
+
+
+
+## 역주행곡 뽑아내기 그래프
+
+```{r DATA eval=TRUE}
+
+
+## rmse 뽑기
+id = 
+  raw %>%
+  select(id)
+
+raw %>%
+  arrange(id)
+
+
+rmse=
+  raw %>%
+  group_by(id,title)%>%
+  summarise(rmse=sqrt(mean(lm(rank~weeknum)$residuals^2)),count=sum(rank/rank))%>%
+  arrange(desc(rmse)) %>%
+  filter(count>10)
+
+
+rmse
+
+
+```
+
+
+
+``` {r}
+rp= function(id1){
+  
+  a=raw[which(raw$id==id1),]
+  
+  
+  ggplot(data = a, aes(x = weeknum, y = rank)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE,color = 'red')+
+  ggtitle(paste(raw[(which(raw$id==id1)),]$title[1],'-',raw[(which(raw$id==id1)),]$artist[1])) +
+  scale_y_continuous(trans = "reverse") 
+  
+}  
+
+
+rp(3973781)
+```
+
+
+
+```{r}
+
+ggplot(data = mtcars, aes(x = mpg, y = hp)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE,color = 'red')+
+  ggtitle(raw$title[1])
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
